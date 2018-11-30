@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd"
+	default-lazy-init="true">
+
+	<description>Shiro安全配置</description>
+
+	<!-- Shiro's main business-tier object for web-enabled applications -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="oauthRealm" />
+		<property name="cacheManager" ref="shiroEhcacheManager" />
+		<property name="sessionManager" ref="sessionManager" />
+	</bean>
+	
+	<bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+		<property name="globalSessionTimeout" value="36000000"/>
+		<property name="sessionIdCookie" ref="sharesession"/>
+	</bean>
+	
+	<bean id="sharesession" class="org.apache.shiro.web.servlet.SimpleCookie">
+		<constructor-arg name="name" value="SHAREJSESSIONID"/>
+	</bean>
+	
+	<!-- 用户授权信息Cache, 采用EhCache，需要的话就配置上此信息 -->
+    <bean id="shiroEhcacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <property name="cacheManagerConfigFile" value="classpath:spring/ehcache-shiro.xml" />
+    </bean>
+
+	<!-- Shiro Filter -->
+	<bean id="shiroFilter" class="com.iflytek.ossp.auth.shiro.OAuthShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="${shiro.loginUrl}" />
+		<property name="successUrl" value="/" />
+		<property name="filterChainDefinitions">
+			<value>
+				/captcha-image = anon
+				/resources/** = anon
+				/static/** = anon
+				/anon/** = anon
+				/oauth/** = anon
+				/**/calculateOverDate.json = anon
+				/**/resautodeploy = anon
+				/**/*upload*/** = anon
+				/** = roles
+			</value>
+		</property>
+		<property name="filters">
+	        <map>
+	            <entry key="roles" value-ref="customRolesAuthorizationFilter" />
+	        </map>
+    	</property>
+	</bean>
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+
+</beans>
